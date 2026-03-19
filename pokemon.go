@@ -303,6 +303,38 @@ type Pokemon struct {
 	Weight int `json:"weight"`
 }
 
+// commandInspect inspects a caught Pokemon and prints its details including stats, types, height, and weight.
+func (cfg *apiConfig) commandInspect(args ...string) error {
+	if len(args) == 0 {
+		fmt.Println("Enter the name of the Pokemon you want to inspect")
+		return nil
+	}
+
+	pokemonName := args[0]
+	var pokemon Pokemon
+	var ok bool
+	if pokemon, ok = cfg.pokemons[pokemonName]; !ok {
+		fmt.Println("you have not caught that pokemon")
+		return nil
+	}
+
+	fmt.Printf("Name: %s\n", pokemon.Name)
+	fmt.Printf("Height: %d\n", pokemon.Height)
+	fmt.Printf("Weight: %d\n", pokemon.Weight)
+	fmt.Println("Stats:")
+	for _, stat := range pokemon.Stats {
+		fmt.Printf("  -%s: %d\n", stat.Stat.Name, stat.BaseStat)
+	}
+	fmt.Println("Types:")
+	for _, t := range pokemon.Types {
+		fmt.Printf("  - %s\n", t.Type.Name)
+	}
+
+	return nil
+}
+
+// commandCatch attempts to catch a Pokemon by name, checking if it's already caught, fetching its details from the API,
+// and simulating a catch attempt based on its base experience.
 func (cfg *apiConfig) commandCatch(args ...string) error {
 	if len(args) == 0 {
 		fmt.Println("Enter the name of the Pokemon you want to catch")

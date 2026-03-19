@@ -54,6 +54,11 @@ func initializeCommands(cfg apiConfig) {
 			description: "Catch a Pokemon",
 			callback:    cfg.commandCatch,
 		},
+		"inspect": {
+			name:        "inspect",
+			description: "Inspect a already caught Pokemon",
+			callback:    cfg.commandInspect,
+		},
 	}
 }
 
