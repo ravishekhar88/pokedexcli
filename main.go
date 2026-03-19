@@ -56,8 +56,13 @@ func initializeCommands(cfg apiConfig) {
 		},
 		"inspect": {
 			name:        "inspect",
-			description: "Inspect a already caught Pokemon",
+			description: "Inspect an already caught Pokemon",
 			callback:    cfg.commandInspect,
+		},
+		"pokedex": {
+			name:        "pokedex",
+			description: "Displays the names of all the caught Pokemon",
+			callback:    cfg.commandPokedex,
 		},
 	}
 }
@@ -128,8 +133,8 @@ func handleInput(input string) bool {
 		return true
 	}
 
-	log.Printf("Error executing command %s: %v\n", input, err)
-	fmt.Printf("Error executing command %s: \n", input)
+	log.Printf("Error executing command: %s: %v\n", input, err)
+	fmt.Printf("Error executing command: %s \n", input)
 	return false
 }
 

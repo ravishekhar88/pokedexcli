@@ -303,6 +303,20 @@ type Pokemon struct {
 	Weight int `json:"weight"`
 }
 
+func (cfg *apiConfig) commandPokedex(_ ...string) error {
+	if len(cfg.pokemons) == 0 {
+		fmt.Println("You haven't caught any Pokemon yet!")
+		return nil
+	}
+
+	fmt.Println("Your Pokedex:")
+	for name := range cfg.pokemons {
+		fmt.Printf(" - %s\n", name)
+	}
+
+	return nil
+}
+
 // commandInspect inspects a caught Pokemon and prints its details including stats, types, height, and weight.
 func (cfg *apiConfig) commandInspect(args ...string) error {
 	if len(args) == 0 {
@@ -365,6 +379,7 @@ func (cfg *apiConfig) commandCatch(args ...string) error {
 
 	if tryCatch(pokemon.Name, pokemon.BaseExperience) {
 		fmt.Println(pokemon.Name, "was caught!")
+		fmt.Println("You may now inspect it with the inspect command.")
 		cfg.pokemons[pokemon.Name] = pokemon
 	} else {
 		fmt.Println(pokemon.Name, "escaped!")
@@ -393,7 +408,7 @@ func getCatchChance(baseExp float64) float64 {
 	 *
 	 * This formula is used by RPG games to simulate difficulty scaling.
 	 */
-	const k = 3.5 // Ease Factor
+	const k = 2.5 // Ease Factor, higher means easier to catch
 	chance := k / math.Log(baseExp)
 
 	if chance < 0.05 {
