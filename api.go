@@ -12,12 +12,14 @@ import (
 const (
 	pokeApiBaseUrl       = "https://pokeapi.co/api/v2"
 	locationAreaEndpoint = "/location-area"
+	pokemonEndpoint      = "/pokemon"
 )
 
 type apiConfig struct {
 	pokeApiCache   *pokecache.Cache
 	nextMapUrl     string
 	previousMapUrl string
+	pokemons       map[string]Pokemon
 }
 
 // fetchWithCache retrieves data from the cache if available, otherwise fetches it via HTTP, and adds the response to the cache.
