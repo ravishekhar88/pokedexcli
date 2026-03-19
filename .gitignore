@@ -1,0 +1,25 @@
+# Go
+*.a
+*.o
+*.so
+*.test
+*.prof
+*.out
+pokedexcli
+vendor/
+_obj/
+_test/
+
+# JetBrains/IntelliJ
+.idea/
+*.iml
+*.iws
+out/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+.Spotlight-V100
+.Trashes
