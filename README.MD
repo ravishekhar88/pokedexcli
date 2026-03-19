@@ -77,21 +77,6 @@ Pokedex > exit
 Closing the Pokedex... Goodbye!
 ```
 
-## Project Structure
-
-```
-pokedexcli/
-├── main.go                          # Main application entry point and REPL
-├── location_areas.go                # Location area fetching and navigation
-├── explore.go                       # Pokemon exploration in location areas
-├── internal/
-│   └── pokecache/
-│       ├── pokecache.go            # Caching implementation
-│       └── pokecache_test.go       # Cache tests
-├── go.mod                          # Go module definition
-└── README.MD                       # This file
-```
-
 ## Technical Details
 
 ### Caching

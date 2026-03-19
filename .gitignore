@@ -23,3 +23,6 @@ out/
 ._*
 .Spotlight-V100
 .Trashes
+
+# logfiles
+*.log

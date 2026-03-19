@@ -3,16 +3,10 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"io"
-	"log"
-	"net/http"
 	"net/url"
 )
 
-const (
-	locationAreaEndpoint = "/location-area"
-	defaultLimit         = "20"
-)
+const defaultLimit = "20"
 
 type LocationAreas struct {
 	Count    int    `json:"count"`
@@ -46,7 +40,11 @@ func (cfg *apiConfig) commandMap(_ ...string) error {
 		return fmt.Errorf("error normalizing URL: %v", err)
 	}
 
-	cfg.fetchAndPrintLocationAreas(normalizedUrl)
+	err = cfg.fetchAndPrintLocationAreas(normalizedUrl)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
@@ -64,45 +62,26 @@ func (cfg *apiConfig) commandMapBack(_ ...string) error {
 	if err != nil {
 		return fmt.Errorf("error normalizing URL: %v", err)
 	}
-	cfg.fetchAndPrintLocationAreas(normalizedUrl)
+
+	err = cfg.fetchAndPrintLocationAreas(normalizedUrl)
+	if err != nil {
+		return err
+	}
+
 	return nil
 }
 
 // fetchAndPrintLocationAreas fetches location areas from the given URL if not cached, caches them, and prints their names.
 // Given URL should be normalized to ensure consistent cache keys.
-func (cfg *apiConfig) fetchAndPrintLocationAreas(normalizedMapUrl string) {
-	bytes, isCached := cfg.mapCache.Get(normalizedMapUrl)
-	if !isCached {
-		res, err := http.Get(normalizedMapUrl)
-		if err != nil {
-			fmt.Printf("error fetching location areas: %v\n", err)
-			return
-		}
-		defer func(Body io.ReadCloser) {
-			err := Body.Close()
-			if err != nil {
-				log.Printf("Error closing response body: %v", err)
-			}
-		}(res.Body)
-
-		if res.StatusCode != http.StatusOK {
-			fmt.Printf("unexpected status code: %d", res.StatusCode)
-			return
-		}
-
-		bytes, err = io.ReadAll(res.Body)
-		if err != nil {
-			fmt.Printf("error reading response body: %v", err)
-			return
-		}
-
-		cfg.mapCache.Add(normalizedMapUrl, bytes)
+func (cfg *apiConfig) fetchAndPrintLocationAreas(normalizedMapUrl string) error {
+	bytes, err := cfg.fetchWithCache(normalizedMapUrl)
+	if err != nil {
+		return err
 	}
 
 	var locationAreas LocationAreas
 	if err := json.Unmarshal(bytes, &locationAreas); err != nil {
-		fmt.Printf("error decoding location areas: %v", err)
-		return
+		return fmt.Errorf("error decoding location areas: %w", err)
 	}
 
 	cfg.nextMapUrl = locationAreas.Next
@@ -111,6 +90,8 @@ func (cfg *apiConfig) fetchAndPrintLocationAreas(normalizedMapUrl string) {
 	for _, area := range locationAreas.Results {
 		fmt.Println(area.Name)
 	}
+
+	return nil
 }
 
 // normalizeUrl parses a URL and re-encodes it with sorted query parameters
