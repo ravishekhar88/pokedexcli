@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"path/filepath"
 	"strings"
 	"time"
 
@@ -18,9 +19,10 @@ type cliCommand struct {
 	callback    func(args ...string) error
 }
 
-var errExitRequested = errors.New("exit requested")
-
-var cmds map[string]cliCommand
+var (
+	errExitRequested = errors.New("exit requested")
+	cmds             map[string]cliCommand
+)
 
 func initializeCommands(cfg apiConfig) {
 	cmds = map[string]cliCommand{
@@ -68,11 +70,6 @@ func initializeCommands(cfg apiConfig) {
 }
 
 func main() {
-	cfg := apiConfig{
-		pokeApiCache: pokecache.NewCache(10 * time.Second),
-		pokemons:     make(map[string]Pokemon),
-	}
-
 	logFile, err := initLog()
 	if err != nil {
 		fmt.Printf("Could not initialize logging: %v\n", err)
@@ -83,6 +80,39 @@ func main() {
 			fmt.Printf("Could not close log file: %v\n", closeErr)
 		}
 	}()
+
+	dbPath, err := resolveDBPath()
+	if err != nil {
+		log.Printf("Could not resolve database path: %v", err)
+		fmt.Println("Could not resolve database path, check cli.log for details")
+		return
+	}
+
+	db, err := initDB(dbPath)
+	if err != nil {
+		log.Printf("Could not initialize database: %v", err)
+		fmt.Println("Could not initialize database, check cli.log for details")
+		return
+	}
+	defer func() {
+		err := db.Close()
+		if err != nil {
+			log.Printf("Could not close database: %v", err)
+		}
+	}()
+
+	pokemons, err := loadPokemons(db)
+	if err != nil {
+		log.Printf("Could not load pokemons from database: %v", err)
+		fmt.Println("Could not load pokemons from database, check cli.log for details")
+		return
+	}
+
+	cfg := apiConfig{
+		db:           db,
+		pokeApiCache: pokecache.NewCache(10 * time.Second),
+		pokemons:     pokemons,
+	}
 
 	initializeCommands(cfg)
 
@@ -134,7 +164,7 @@ func handleInput(input string) bool {
 	}
 
 	log.Printf("Error executing command: %s: %v\n", input, err)
-	fmt.Printf("Error executing command: %s \n", input)
+	fmt.Printf("Error executing command: %s\n", input)
 	return false
 }
 
@@ -164,6 +194,20 @@ func initLog() (*os.File, error) {
 	log.SetFlags(log.Ldate | log.Ltime | log.Lshortfile)
 
 	return f, nil
+}
+
+func resolveDBPath() (string, error) {
+	configDir, err := os.UserConfigDir()
+	if err != nil {
+		return "", fmt.Errorf("could not find user config directory: %w", err)
+	}
+
+	appDir := filepath.Join(configDir, "pokedexcli")
+	if err := os.MkdirAll(appDir, 0755); err != nil {
+		return "", fmt.Errorf("could not create app config directory: %w", err)
+	}
+
+	return filepath.Join(appDir, "pokedex.db"), nil
 }
 
 func cleanInput(text string) []string {

@@ -325,9 +325,8 @@ func (cfg *apiConfig) commandInspect(args ...string) error {
 	}
 
 	pokemonName := args[0]
-	var pokemon Pokemon
-	var ok bool
-	if pokemon, ok = cfg.pokemons[pokemonName]; !ok {
+	pokemon, ok := cfg.pokemons[pokemonName]
+	if !ok {
 		fmt.Println("you have not caught that pokemon")
 		return nil
 	}
@@ -364,23 +363,26 @@ func (cfg *apiConfig) commandCatch(args ...string) error {
 	fmt.Printf("Throwing a Pokeball at %s...\n", pokemonName)
 	fullURL, err := url.JoinPath(pokeApiBaseUrl, pokemonEndpoint, pokemonName)
 	if err != nil {
-		return fmt.Errorf("error parsing URL: %v", err)
+		return fmt.Errorf("error parsing pokemon URL: %w", err)
 	}
 
-	bytes, err := cfg.fetchWithCache(fullURL)
+	bytes, err := cfg.fetchWithCache(fullURL, "pokemon-name")
 	if err != nil {
 		return err
 	}
 
 	var pokemon Pokemon
 	if err := json.Unmarshal(bytes, &pokemon); err != nil {
-		return fmt.Errorf("error parsing response: %v", err)
+		return fmt.Errorf("error decoding pokemon: %w", err)
 	}
 
 	if tryCatch(pokemon.Name, pokemon.BaseExperience) {
 		fmt.Println(pokemon.Name, "was caught!")
 		fmt.Println("You may now inspect it with the inspect command.")
 		cfg.pokemons[pokemon.Name] = pokemon
+		if err := savePokemon(cfg.db, pokemon); err != nil {
+			log.Printf("Error saving pokemon to database: %v", err)
+		}
 	} else {
 		fmt.Println(pokemon.Name, "escaped!")
 	}
@@ -408,7 +410,7 @@ func getCatchChance(baseExp float64) float64 {
 	 *
 	 * This formula is used by RPG games to simulate difficulty scaling.
 	 */
-	const k = 2.5 // Ease Factor, higher means easier to catch
+	const k = 2.0 // Ease Factor, higher means easier to catch
 	chance := k / math.Log(baseExp)
 
 	if chance < 0.05 {

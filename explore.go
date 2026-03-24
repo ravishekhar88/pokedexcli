@@ -72,17 +72,17 @@ func (cfg *apiConfig) commandExplore(args ...string) error {
 	fmt.Printf("Exploring %s...\n", locationAreaName)
 	fullURL, err := url.JoinPath(pokeApiBaseUrl, locationAreaEndpoint, locationAreaName)
 	if err != nil {
-		return fmt.Errorf("error parsing URL: %v", err)
+		return fmt.Errorf("error parsing location area name URL: %w", err)
 	}
 
-	bytes, err := cfg.fetchWithCache(fullURL)
+	bytes, err := cfg.fetchWithCache(fullURL, "location-area-name")
 	if err != nil {
 		return err
 	}
 
 	var locationArea LocationArea
 	if err := json.Unmarshal(bytes, &locationArea); err != nil {
-		return fmt.Errorf("error decoding location area: %w", err)
+		return fmt.Errorf("error decoding location area name: %w", err)
 	}
 
 	if len(locationArea.PokemonEncounters) > 0 {

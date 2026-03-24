@@ -24,7 +24,7 @@ func (cfg *apiConfig) commandMap(_ ...string) error {
 	if mapUrl == "" {
 		parsedUrl, err := url.Parse(pokeApiBaseUrl + locationAreaEndpoint)
 		if err != nil {
-			return fmt.Errorf("error parsing URL: %v", err)
+			return fmt.Errorf("error parsing location areas URL: %w", err)
 		}
 
 		query := parsedUrl.Query()
@@ -37,10 +37,10 @@ func (cfg *apiConfig) commandMap(_ ...string) error {
 
 	normalizedUrl, err := normalizeUrl(mapUrl)
 	if err != nil {
-		return fmt.Errorf("error normalizing URL: %v", err)
+		return fmt.Errorf("error normalizing location areas URL: %w", err)
 	}
 
-	err = cfg.fetchAndPrintLocationAreas(normalizedUrl)
+	err = cfg.syncAndPrintLocationAreas(normalizedUrl)
 	if err != nil {
 		return err
 	}
@@ -60,10 +60,10 @@ func (cfg *apiConfig) commandMapBack(_ ...string) error {
 
 	normalizedUrl, err := normalizeUrl(cfg.previousMapUrl)
 	if err != nil {
-		return fmt.Errorf("error normalizing URL: %v", err)
+		return fmt.Errorf("error normalizing location areas URL: %w", err)
 	}
 
-	err = cfg.fetchAndPrintLocationAreas(normalizedUrl)
+	err = cfg.syncAndPrintLocationAreas(normalizedUrl)
 	if err != nil {
 		return err
 	}
@@ -71,10 +71,11 @@ func (cfg *apiConfig) commandMapBack(_ ...string) error {
 	return nil
 }
 
-// fetchAndPrintLocationAreas fetches location areas from the given URL if not cached, caches them, and prints their names.
-// Given URL should be normalized to ensure consistent cache keys.
-func (cfg *apiConfig) fetchAndPrintLocationAreas(normalizedMapUrl string) error {
-	bytes, err := cfg.fetchWithCache(normalizedMapUrl)
+// syncAndPrintLocationAreas fetches location areas from the given URL if not cached, caches them, and prints their names.
+// It also updates the next and previous URLs in the config for pagination. The input URL is expected to be normalized
+// for consistent caching.
+func (cfg *apiConfig) syncAndPrintLocationAreas(normalizedMapUrl string) error {
+	bytes, err := cfg.fetchWithCache(normalizedMapUrl, "location-areas")
 	if err != nil {
 		return err
 	}
